@@ -22,7 +22,7 @@ function list_disk_usage($dir, $base_path = '') {
                 if (is_dir($path)) {
                     $size = disk_usage($path);
                     $result[$relative_path] = $size;
-                    $result = array_merge($result, list_disk_usage($path, $relative_path));
+                    // Nicht rekursiv für Unterverzeichnisse aufrufen
                 }
             }
         }
@@ -33,20 +33,20 @@ function list_disk_usage($dir, $base_path = '') {
 function disk_usage($dir) {
     $size = 0;
     if (is_dir($dir)) {
-        $files = scandir($dir);
+        $files = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($dir, RecursiveDirectoryIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::CHILD_FIRST
+        );
         foreach ($files as $file) {
-            if ($file != '.' && $file != '..') {
-                $path = $dir . '/' . $file;
-                if (is_dir($path)) {
-                    $size += disk_usage($path);
-                } else {
-                    $size += filesize($path);
-                }
+            if ($file->isFile()) {
+                $size += $file->getSize();
             }
         }
     }
     return $size;
 }
+
+
 
 add_action('admin_menu', 'custom_disk_usage_menu');
 
